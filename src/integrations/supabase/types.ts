@@ -14,7 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      certificados: {
+        Row: {
+          ano_conclusao: number
+          ativo: boolean
+          cidade: string
+          codigo: string
+          cpf: string
+          created_at: string
+          curso: string
+          data_emissao: string
+          data_nascimento: string
+          endereco: string
+          estado: string
+          id: string
+          instituicao: string
+          nivel: string
+          nome: string
+          registro: string
+        }
+        Insert: {
+          ano_conclusao: number
+          ativo?: boolean
+          cidade: string
+          codigo: string
+          cpf: string
+          created_at?: string
+          curso: string
+          data_emissao: string
+          data_nascimento: string
+          endereco: string
+          estado: string
+          id?: string
+          instituicao: string
+          nivel: string
+          nome: string
+          registro: string
+        }
+        Update: {
+          ano_conclusao?: number
+          ativo?: boolean
+          cidade?: string
+          codigo?: string
+          cpf?: string
+          created_at?: string
+          curso?: string
+          data_emissao?: string
+          data_nascimento?: string
+          endereco?: string
+          estado?: string
+          id?: string
+          instituicao?: string
+          nivel?: string
+          nome?: string
+          registro?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
