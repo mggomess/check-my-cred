@@ -26,25 +26,49 @@ function ConsultaPage() {
   const [cert, setCert] = useState<Certificado | null>(null);
 
   useEffect(() => {
-    let alive = true;
+  let alive = true;
+
+  async function buscarCertificado() {
     setLoading(true);
-    supabase
+
+    const { data, error } = await supabase
       .from("certificados")
       .select(
-        "codigo,nome,cpf,data_nascimento,curso,nivel,ano_conclusao,instituicao,estado,cidade,endereco,registro,data_emissao,ativo,qr_URL",
+        "codigo,nome,cpf,curso,nivel,ano_conclusao,instituicao,estado,cidade,registro,data_emissao,ativo",
       )
       .eq("codigo", codigo)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (!alive) return;
-        setCert((data as Certificado | null) ?? null);
-        setLoading(false);
-      });
-    return () => {
-      alive = false;
-    };
-  }, [codigo]);
+      .maybeSingle();
 
+    if (!alive) return;
+
+    if (error) {
+      console.error("Erro ao consultar certificado:", error);
+      setCert(null);
+      setLoading(false);
+      return;
+    }
+
+    if (!data) {
+      setCert(null);
+      setLoading(false);
+      return;
+    }
+
+    setCert({
+      ...data,
+      data_nascimento: "",
+      endereco: "",
+    } as Certificado);
+
+    setLoading(false);
+  }
+
+  buscarCertificado();
+
+  return () => {
+    alive = false;
+  };
+}, [codigo]);
   return (
     <div className="min-h-screen bg-slate-100 font-sans">
       <Header />
