@@ -31,7 +31,7 @@ function ConsultaPage() {
     supabase
       .from("certificados")
       .select(
-        "codigo,nome,cpf,data_nascimento,curso,nivel,ano_conclusao,instituicao,estado,cidade,endereco,registro,data_emissao,ativo",
+        "codigo,nome,cpf,data_nascimento,curso,nivel,ano_conclusao,instituicao,estado,cidade,endereco,registro,data_emissao,ativo,qr_URL",
       )
       .eq("codigo", codigo)
       .maybeSingle()
