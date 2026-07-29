@@ -30,35 +30,103 @@ function ConsultaPage() {
 
   async function buscarCertificado() {
     setLoading(true);
+    setCert(null);
 
-    const { data, error } = await supabase
+    // 1. Primeiro procura na tabela nova.
+    const { data: novo, error: erroNovo } = await supabase
+      .from("certificates")
+      .select(`
+        code,
+        estado,
+        issued_at,
+        status,
+        students (
+          full_name,
+          cpf
+        ),
+        courses (
+          name,
+          workload
+        ),
+        institutions (
+          name,
+          city,
+          address
+        )
+      `)
+      .eq("code", codigo)
+      .maybeSingle();
+
+    if (!alive) return;
+
+    if (erroNovo) {
+      console.error("Erro ao consultar certificates:", erroNovo);
+    }
+
+    if (novo) {
+      const aluno = novo.students as {
+        full_name: string;
+        cpf: string | null;
+      } | null;
+
+      const curso = novo.courses as {
+        name: string;
+        workload: number;
+      } | null;
+
+      const instituicao = novo.institutions as {
+        name: string;
+        city: string | null;
+        address: string | null;
+      } | null;
+
+      setCert({
+        codigo: novo.code,
+        nome: aluno?.full_name ?? "",
+        cpf: aluno?.cpf ?? "",
+        data_nascimento: "",
+        curso: curso?.name ?? "",
+        nivel: novo.type === "superior" ? "Ensino Superior" : "Curso Livre",
+        ano_conclusao: new Date(novo.issued_at).getFullYear(),
+        instituicao: instituicao?.name ?? "Instituição de Ensino",
+        estado: novo.estado ?? "",
+        cidade: instituicao?.city ?? "",
+        endereco: instituicao?.address ?? "",
+        registro: novo.code,
+        data_emissao: novo.issued_at,
+        ativo: novo.status !== "cancelado",
+      } as Certificado);
+
+      setLoading(false);
+      return;
+    }
+
+    // 2. Caso não encontre, procura na tabela antiga.
+    const { data: antigo, error: erroAntigo } = await supabase
       .from("certificados")
       .select(
-        "codigo,nome,cpf,curso,nivel,ano_conclusao,instituicao,estado,cidade,registro,data_emissao,ativo",
+        "codigo,nome,cpf,data_nascimento,curso,ano_conclusao,instituicao,estado,cidade,endereco,registro,data_emissao,ativo",
       )
       .eq("codigo", codigo)
       .maybeSingle();
 
     if (!alive) return;
 
-    if (error) {
-      console.error("Erro ao consultar certificado:", error);
+    if (erroAntigo) {
+      console.error("Erro ao consultar certificados:", erroAntigo);
       setCert(null);
       setLoading(false);
       return;
     }
 
-    if (!data) {
+    if (antigo) {
+      setCert({
+        ...antigo,
+        nivel: "Certificado",
+      } as Certificado);
+    } else {
       setCert(null);
-      setLoading(false);
-      return;
     }
-
-    setCert({
-      ...data,
-      data_nascimento: "",
-      endereco: "",
-    } as Certificado);
 
     setLoading(false);
   }
