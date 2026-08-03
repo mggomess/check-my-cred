@@ -10,11 +10,17 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as VerificarCodeRouteImport } from './routes/verificar.$code'
 import { Route as CertificadoCodigoRouteImport } from './routes/certificado.$codigo'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VerificarCodeRoute = VerificarCodeRouteImport.update({
+  id: '/verificar/$code',
+  path: '/verificar/$code',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CertificadoCodigoRoute = CertificadoCodigoRouteImport.update({
@@ -26,27 +32,31 @@ const CertificadoCodigoRoute = CertificadoCodigoRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/certificado/$codigo': typeof CertificadoCodigoRoute
+  '/verificar/$code': typeof VerificarCodeRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/certificado/$codigo': typeof CertificadoCodigoRoute
+  '/verificar/$code': typeof VerificarCodeRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/certificado/$codigo': typeof CertificadoCodigoRoute
+  '/verificar/$code': typeof VerificarCodeRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/certificado/$codigo'
+  fullPaths: '/' | '/certificado/$codigo' | '/verificar/$code'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/certificado/$codigo'
-  id: '__root__' | '/' | '/certificado/$codigo'
+  to: '/' | '/certificado/$codigo' | '/verificar/$code'
+  id: '__root__' | '/' | '/certificado/$codigo' | '/verificar/$code'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CertificadoCodigoRoute: typeof CertificadoCodigoRoute
+  VerificarCodeRoute: typeof VerificarCodeRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -56,6 +66,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/verificar/$code': {
+      id: '/verificar/$code'
+      path: '/verificar/$code'
+      fullPath: '/verificar/$code'
+      preLoaderRoute: typeof VerificarCodeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/certificado/$codigo': {
@@ -71,6 +88,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CertificadoCodigoRoute: CertificadoCodigoRoute,
+  VerificarCodeRoute: VerificarCodeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
