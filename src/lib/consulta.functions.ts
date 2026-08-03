@@ -6,31 +6,53 @@ export const consultarCertificado = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     const codigo = data.codigo.trim();
 
-    const { buscarNoEmissor } = await import("./emissor.server");
+    const { buscarNoEmissor, buscarNoEndpointPublico } = await import("./emissor.server");
     const { createClient } = await import("@supabase/supabase-js");
 
-    // 1) Base local de certificados.
-    const local = createClient(
-      process.env["SUPABASE_URL"]!,
-      process.env["SUPABASE_PUBLISHABLE_KEY"]!,
-      { auth: { storage: undefined, persistSession: false, autoRefreshToken: false } },
-    );
+    let houveErro = false;
 
-    const { data: antigo } = await local
-      .from("certificados")
-      .select(
-        "codigo,nome,cpf,data_nascimento,curso,nivel,ano_conclusao,instituicao,estado,cidade,endereco,registro,data_emissao,ativo",
-      )
-      .eq("codigo", codigo)
-      .maybeSingle();
-
-    if (antigo) return antigo;
-
-    // 2) Base do sistema emissor (históricos, registros e certificados).
+    // 1) Endpoint público do sistema emissor (QR Code).
     try {
-      return await buscarNoEmissor(codigo);
+      const publico = await buscarNoEndpointPublico(codigo);
+      if (publico) return { status: "encontrado" as const, certificado: publico };
     } catch (error) {
-      console.error("Erro ao consultar base do emissor:", error);
-      return null;
+      houveErro = true;
+      console.error("Erro ao consultar endpoint público do emissor:", error);
     }
+
+    // 2) Base local de certificados.
+    try {
+      const local = createClient(
+        process.env["SUPABASE_URL"]!,
+        process.env["SUPABASE_PUBLISHABLE_KEY"]!,
+        { auth: { storage: undefined, persistSession: false, autoRefreshToken: false } },
+      );
+
+      const { data: antigo } = await local
+        .from("certificados")
+        .select(
+          "codigo,nome,cpf,data_nascimento,curso,nivel,ano_conclusao,instituicao,estado,cidade,endereco,registro,data_emissao,ativo",
+        )
+        .eq("codigo", codigo)
+        .maybeSingle();
+
+      if (antigo) return { status: "encontrado" as const, certificado: antigo };
+    } catch (error) {
+      houveErro = true;
+      console.error("Erro ao consultar base local:", error);
+    }
+
+    // 3) Base do sistema emissor (históricos, registros e certificados).
+    try {
+      const remoto = await buscarNoEmissor(codigo);
+      if (remoto) return { status: "encontrado" as const, certificado: remoto };
+    } catch (error) {
+      houveErro = true;
+      console.error("Erro ao consultar base do emissor:", error);
+    }
+
+    return {
+      status: houveErro ? ("erro" as const) : ("nao_encontrado" as const),
+      certificado: null,
+    };
   });

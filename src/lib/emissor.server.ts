@@ -43,6 +43,52 @@ export type CertificadoPublico = {
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+const EMISSOR_API = "https://emblem-beam.lovable.app/api/public/certificados";
+
+/** Consulta o endpoint público do sistema emissor (emblem-beam). */
+export async function buscarNoEndpointPublico(
+  uuid: string,
+): Promise<CertificadoPublico | null> {
+  const res = await fetch(`${EMISSOR_API}/${encodeURIComponent(uuid)}`, {
+    headers: { accept: "application/json" },
+  });
+
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`Endpoint público respondeu ${res.status}`);
+
+  const contentType = res.headers.get("content-type") ?? "";
+  if (!contentType.includes("application/json")) {
+    throw new Error("Endpoint público não retornou JSON");
+  }
+
+  const payload = (await res.json()) as {
+    found?: boolean;
+    certificado?: Record<string, any>;
+  };
+
+  if (!payload?.found || !payload.certificado) return null;
+
+  const c = payload.certificado;
+  const status = String(c.status ?? "").toLowerCase();
+
+  return {
+    codigo: c.codigo ?? uuid,
+    nome: c.nome ?? "",
+    cpf: c.cpf ?? "",
+    data_nascimento: c.data_nascimento ?? "",
+    curso: c.curso ?? "",
+    nivel: c.nivel ?? "Certificado",
+    ano_conclusao: anoDe(c.ano_conclusao, c.data_emissao),
+    instituicao: c.instituicao ?? "",
+    estado: c.estado ?? "",
+    cidade: c.cidade ?? "",
+    endereco: c.endereco ?? "",
+    registro: c.registro ?? c.codigo ?? uuid,
+    data_emissao: String(c.data_emissao ?? "").slice(0, 10),
+    ativo: status ? status !== "cancelado" && status !== "inativo" : true,
+  };
+}
+
 function anoDe(valor: unknown, fallbackIso?: string | null): number {
   const n = Number(valor);
   if (Number.isFinite(n) && n > 1900) return n;
